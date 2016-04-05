@@ -1,0 +1,90 @@
+
+ErrorDocument 404 https://www.tendersghana.com/error.php
+
+
+RewriteEngine On
+RewriteBase /
+RewriteCond %{HTTP_HOST} ^tendersghana.com [NC]
+RewriteRule ^(.*)$ http://www.tendersghana.com/$1 [L,R=301]
+
+
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} 
+
+
+ RewriteEngine On
+ RewriteBase /
+ # remove .php; use THE_REQUEST to prevent infinite loops
+ RewriteCond %{THE_REQUEST} ^GET\ (.*)\.php\ HTTP
+ RewriteRule (.*)\.php$ $1 [R=301]
+ # remove index
+ RewriteRule (.*)/index$ $1/ [R=301]
+ # remove slash if not directory
+ RewriteCond %{REQUEST_FILENAME} !-d
+ RewriteCond %{REQUEST_URI} /$
+ RewriteRule (.*)/ $1 [R=301]
+ # add .php to access file, but don't redirect
+ RewriteCond %{REQUEST_FILENAME}.php -f
+ RewriteCond %{REQUEST_URI} !/$
+ RewriteRule (.*) $1\.php [L]
+
+<IfModule mod_filter.c>
+    AddOutputFilterByType DEFLATE "application/atom+xml" \
+                                  "application/javascript" \
+                                  "application/json" \
+                                  "application/ld+json" \
+                                  "application/manifest+json" \
+                                  "application/rdf+xml" \
+                                  "application/rss+xml" \
+                                  "application/schema+json" \
+                                  "application/vnd.geo+json" \
+                                  "application/vnd.ms-fontobject" \
+                                  "application/x-font-ttf" \
+                                  "application/x-javascript" \
+                                  "application/x-web-app-manifest+json" \
+                                  "application/xhtml+xml" \
+                                  "application/xml" \
+                                  "font/eot" \
+                                  "font/opentype" \
+                                  "image/bmp" \
+                                  "image/svg+xml" \
+                                  "image/vnd.microsoft.icon" \
+                                  "image/x-icon" \
+                                  "text/cache-manifest" \
+                                  "text/css" \
+                                  "text/html" \
+                                  "text/javascript" \
+                                  "text/plain" \
+                                  "text/vcard" \
+                                  "text/vnd.rim.location.xloc" \
+                                  "text/vtt" \
+                                  "text/x-component" \
+                                  "text/x-cross-domain-policy" \
+                                  "text/xml"
+
+</IfModule>
+
+
+RewriteEngine On
+
+# proc/self/environ? no way!
+RewriteCond %{QUERY_STRING} proc/self/environ [OR]
+
+# Block out any script trying to set a mosConfig value through the URL
+RewriteCond %{QUERY_STRING} mosConfig_[a-zA-Z_]{1,21}(=|\%3D) [OR]
+
+# Block out any script trying to base64_encode crap to send via URL
+RewriteCond %{QUERY_STRING} base64_encode.*(.*) [OR]
+
+# Block out any script that includes a <script> tag in URL
+RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
+
+# Block out any script trying to set a PHP GLOBALS variable via URL
+RewriteCond %{QUERY_STRING} GLOBALS(=|[|\%[0-9A-Z]{0,2}) [OR]
+
+# Block out any script trying to modify a _REQUEST variable via URL
+RewriteCond %{QUERY_STRING} _REQUEST(=|[|\%[0-9A-Z]{0,2})
+
+# Send all blocked request to homepage with 403 Forbidden error!
+RewriteRule ^(.*)$ index.php [F,L]
